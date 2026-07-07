@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compose_linter"
+version = "0.1.0"
+description = "compose_linter Python project."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+compose_linter = "compose_linter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
