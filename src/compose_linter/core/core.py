@@ -78,7 +78,7 @@ def check_writeable(service_name: str, service_data: dict):
         if 'ro' in options:
             print(f'{volume_entry} is read-only')
         else:
-            print(f'{warning_text('WARNING:')} {highlight_text(service_name)} is writing data from the container\'s {info_text(source)} to the host\'s {info_text(target)}')
+            print(f'{warning_text('WARNING:')} {highlight_text(service_name)} is writing data from the host\'s {info_text(source)} to the container\'s {info_text(target)}')
             # TODO: source & target
 
 def parse_volume(volume_entry: str):
