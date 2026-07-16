@@ -4,7 +4,7 @@ from pathlib import Path
 from compose_linter.termcolors import *
 from compose_linter.utils import yaml, open_yaml
 
-compose_path = Path(__file__).with_name('compose.yml')
+compose_path = Path(__file__).with_name('compose_.yml')
 compose_dict = open_yaml(compose_path)
 service_dict = compose_dict.get('services', {})
 container_name = service_dict.get('container_name', {})
@@ -26,10 +26,16 @@ def iterate_services(service_dict: dict):
         yield service_name, service_data
 
 def check_restart_policy(service_name: str, service_data: dict):
-    # check if restart policy is defined and enabled
+    #check if restart policy is defined and enabled
     has_restart = 'restart' in service_data
     if not has_restart:
         print(f'{error_text('ERROR:')} No restart policy was found in {service_name}')
+    restart_policy = service_data.get('restart', [])
+    if 'no' in restart_policy:
+        print(f'{warning_text('WARNING:')} Restart policy is set to never restart for {service_name}')
+    else:
+        return
+
     # add logic for defined, but disabled policy
 
 
