@@ -1,6 +1,7 @@
 services:
   one-service:
     restart: on-failure
+    privileged: true
 
   two-service:
     restart: no
@@ -9,7 +10,10 @@ services:
     restart: unless-stopped
     volumes:
       - /test/paths:/test/paths:ro
+      - /example/path:/mnt/example/path
+    privileged: false
 
   four-service:
     volumes:
       - /test/path:/test/path
+    restart: 'no'
