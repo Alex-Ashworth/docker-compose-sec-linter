@@ -111,15 +111,43 @@ def parse_volume(volume_entry: str):
     return source, target, mode
 
 
-def parse_protocol(port_sections: str):
-    # split ports and protocols
-    port_entry_sections = port_sections.split("/")
-    if len(port_entry_sections) ==
+def check_ports(service_name: str, service_data: dict):
+    # check for publicly exposed ports
+    ports = service_data.get("ports", [])
+    if not ports:
+        print(f"No port entries found under {service_name}")
+        return
+    for port_entry in ports:
+        port_section, protocol = parse_protocol(port_entry)
+        host_ip, published, target = parse_port(port_section)
+        print()
+        print(host_ip)
 
-def parse_port(port_entry: str):
+
+# FIXME: gotta split it ":"
+
+
+def parse_port(port_section: str):
     # split port entries
-    port_sections = port_entry.split(":")
-    if len(port_sections) ==  
+    if len(port_section) == 1:
+        target = port_section
+        host_ip, published = None, None
+    elif len(port_section) == 2:
+        published, target = port_section
+        host_ip = None
+    elif len(port_section) == 3:
+        host_ip, published, target = port_section
+    else:
+        print(f"{error_text('ERROR:')} Could not parse ports: {port_section}")
+        return None, None, None
+    return host_ip, published, target
+
+
+def parse_protocol(port_entry: str):
+    # split ports and protocols
+    port_section, separator, protocol = port_entry.partition("/")
+    protocol = protocol if separator else "tcp"
+    return port_section, protocol
 
 
 def run_checks(service_dict: dict):
@@ -129,6 +157,7 @@ def run_checks(service_dict: dict):
         check_privilege(service_name, service_data)
         check_restart_policy(service_name, service_data)
         check_writeable(service_name, service_data)
+        check_ports(service_name, service_data)
 
 
 def run():
