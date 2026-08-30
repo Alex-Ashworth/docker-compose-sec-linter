@@ -122,6 +122,8 @@ def check_ports(service_name: str, service_data: dict):
         host_ip, published, target = parse_port(port_section)
         print()
         print(host_ip)
+        print(published)
+        print(target)
 
 
 # FIXME: gotta split it ":"
@@ -129,14 +131,15 @@ def check_ports(service_name: str, service_data: dict):
 
 def parse_port(port_section: str):
     # split port entries
-    if len(port_section) == 1:
+    split_sections = port_section.split(":")
+    if len(split_sections) == 1:
         target = port_section
         host_ip, published = None, None
-    elif len(port_section) == 2:
-        published, target = port_section
+    elif len(split_sections) == 2:
+        published, target = split_sections
         host_ip = None
-    elif len(port_section) == 3:
-        host_ip, published, target = port_section
+    elif len(split_sections) == 3:
+        host_ip, published, target = split_sections
     else:
         print(f"{error_text('ERROR:')} Could not parse ports: {port_section}")
         return None, None, None
