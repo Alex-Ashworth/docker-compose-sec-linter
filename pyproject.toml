@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "compose_linter Python project."
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["termcolor", "requests", "ruamel.yaml"]
 
 [project.scripts]
 compose_linter = "compose_linter.cli:main"
