@@ -1,12 +1,14 @@
 # Core logic:
+import requests
 from pathlib import Path
+from ipaddress import ip_address
 from compose_linter.termcolors import (
     error_text,
     info_text,
     highlight_text,
     warning_text,
 )
-from compose_linter.utils import yaml, open_yaml
+from compose_linter.utils import open_yaml
 
 compose_path = Path(__file__).with_name("compose.yml")
 compose_dict = open_yaml(compose_path)
@@ -55,6 +57,19 @@ def check_service_source(service_name: str, service_data: dict):
     has_build = "build" in service_data
     if not has_image and not has_build:
         print(f"{error_text('ERROR:')} No image or build entry found in {service_name}")
+    elif has_image:
+        verify_image()
+        # FIXME: define this with type hints
+
+
+def verify_image(registry: str, foo: str, image: str):
+    print()
+
+
+def parse_image(image_entry: str):
+    image_section = image_entry.split(":")
+
+    # TODO: add logic to split on / if the registry is pulled
 
 
 # If service has image:
@@ -111,6 +126,11 @@ def parse_volume(volume_entry: str):
     return source, target, mode
 
 
+def network_check():
+    print(f"{info_text('Scanning network..')}")
+
+
+# TODO: public ip detection, printing and error_text
 def check_ports(service_name: str, service_data: dict):
     # check for publicly exposed ports
     ports = service_data.get("ports", [])
@@ -120,13 +140,20 @@ def check_ports(service_name: str, service_data: dict):
     for port_entry in ports:
         port_section, protocol = parse_protocol(port_entry)
         host_ip, published, target = parse_port(port_section)
-        print()
-        print(host_ip)
-        print(published)
-        print(target)
-
-
-# FIXME: gotta split it ":"
+        if not host_ip or host_ip == "0.0.0.0" or host_ip == "::":
+            print(
+                f"{warning_text('WARNING:')} {highlight_text(service_name)} does not have an IP address defined. This container could be exposed externally"
+            )
+        else:
+            host_ip_address = ip_address(host_ip)
+            if host_ip_address.is_global:
+                print(
+                    f"{warning_text('WARNING:')} {info_text(service_name)}:{highlight_text(port_section)} {warning_text('has a publicly exposed IP address! Proceed with caution!')}"
+                )
+            else:
+                print(
+                    f"{info_text(service_name)}:{highlight_text(port_section)} has no publicly exposed ports"
+                )
 
 
 def parse_port(port_section: str):
