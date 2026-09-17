@@ -1,8 +1,9 @@
 # Core logic:
+from ipaddress import ip_address
 from pathlib import Path
 
 # from compose_linter.api import requests
-from compose_linter.ports import check_ports
+from compose_linter.parsing import parse_image, parse_port, parse_protocol, parse_volume
 from compose_linter.termcolors import (
     error_text,
     info_text,
@@ -70,11 +71,6 @@ def verify_image(registry: str, foo: str, image: str):
     print()
 
 
-def parse_image(image_entry: str):
-    print()
-    # TODO: add logic to split on / if the registry is pulled
-
-
 # If service has image:
 #     optionally validate image against registry
 #        could have edge cases where docker registry is down, individial links are deprecated, etc..
@@ -115,18 +111,30 @@ def check_writeable(service_name: str, service_data: dict):
             )
 
 
-def parse_volume(volume_entry: str):
-    # split volume entries
-    volume_sections = volume_entry.split(":")
-    if len(volume_sections) == 2:
-        source, target = volume_sections
-        mode = None
-    elif len(volume_sections) == 3:
-        source, target, mode = volume_sections
-    else:
-        print(f"{error_text('ERROR:')} Could not parse volume: {volume_entry}")
-        return None, None, None
-    return source, target, mode
+# TODO: public ip detection, printing and error_text
+def check_ports(service_name: str, service_data: dict):
+    # check for publicly exposed ports
+    ports = service_data.get("ports", [])
+    if not ports:
+        print(f"No port entries found under {service_name}")
+        return
+    for port_entry in ports:
+        port_section, protocol = parse_protocol(port_entry)
+        host_ip, published, target = parse_port(port_section)
+        if not host_ip or host_ip == "0.0.0.0" or host_ip == "::":
+            print(
+                f"{warning_text('WARNING:')} {highlight_text(service_name)} does not have an IP address defined. This container could be exposed externally"
+            )
+        else:
+            host_ip_address = ip_address(host_ip)
+            if host_ip_address.is_global:
+                print(
+                    f"{warning_text('WARNING:')} {info_text(service_name)}:{highlight_text(port_section)} {warning_text('has a publicly exposed IP address! Proceed with caution!')}"
+                )
+            else:
+                print(
+                    f"{info_text(service_name)}:{highlight_text(port_section)} has no publicly exposed ports"
+                )
 
 
 def network_check():
