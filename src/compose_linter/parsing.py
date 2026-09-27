@@ -3,14 +3,18 @@ from termcolors import error_text
 
 # handle if there is no colon TODO:
 # define default_registry
-def parse_image(image_entry: str):
-    image_split_sections = image_entry.split(":")
-    default_registry = 
-    if len(image_split_sections) == 1:
-        input = image_split_sections
-        registry = default_registry
-        repo = f"{default_repo}/{input}"
-    # TODO: add logic to split on / if the registry is pulled
+def parse_reference(image_entry: str):
+    image, separator, digest = image_entry.partition("@")
+    if separator:
+        return image, digest
+    else:
+        return image, None
+
+
+def parse_image(image: str):
+    image, digest = parse_reference(image_entry)
+
+    # TODO: add logic to split on / if the registry is pulled, [registry/][project/]image[:tag|@digest]
 
 
 def parse_port(port_section: str):
