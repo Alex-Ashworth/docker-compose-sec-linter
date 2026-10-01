@@ -11,9 +11,24 @@ def parse_reference(image_entry: str):
         return image, None
 
 
-def parse_image(image: str):
+def parse_image(image_entry: str):
     image, digest = parse_reference(image_entry)
-
+    if digest is None:
+        tag_section = image.split(":")
+        if len(tag_section) > 1:
+            image, tag = tag_section
+        elif len(tag_section) == 1:
+            image_section = image.split("/")
+            if len(image_section) == 1:
+                image = image_section
+                registry = "docker.io"
+                repo = "library"
+                tag = "latest"
+            elif len(image_section) == 2:
+                repo, image = image_section
+                # need to handle the multiple /
+            elif len(image_section) == 3:
+                print()
     # TODO: add logic to split on / if the registry is pulled, [registry/][project/]image[:tag|@digest]
 
 
