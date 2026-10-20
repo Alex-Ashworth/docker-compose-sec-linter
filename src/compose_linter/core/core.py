@@ -3,7 +3,14 @@ from ipaddress import ip_address
 from pathlib import Path
 
 # from compose_linter.api import requests
-from compose_linter.parsing import parse_image, parse_port, parse_protocol, parse_volume
+from compose_linter.api import check_registry
+from compose_linter.parsing import (
+    parse_image,
+    parse_port,
+    parse_protocol,
+    parse_reference,
+    parse_volume,
+)
 from compose_linter.termcolors import (
     error_text,
     info_text,
@@ -11,24 +18,22 @@ from compose_linter.termcolors import (
     warning_text,
 )
 from compose_linter.utils import open_yaml
-# from compose_linter.volumes import (
-#
-# )
 
 compose_path = Path(__file__).with_name("compose.yml")
 compose_dict = open_yaml(compose_path)
 service_dict = compose_dict.get("services", {})
-container_name = service_dict.get("container_name", {})
 
 
-def check_services_entry(compose_dict: dict):
+def check_services_entry():
     # check if services are defined
-    has_service = "services" in compose_dict
-    if not has_service:
-        print(
-            f"{error_text('ERROR:')} Compose file {compose_path} does not have services defined"
-        )
-        raise InvalidComposeError
+    if not service_dict:
+        raise InvalidComposeError(compose_path)
+
+
+class InvalidComposeError(Exception):
+    def __init__(self, compose_path):
+        error_msg = f"{error_text('ERROR:')} Compose file {compose_path} does not have services defined"
+        super().__init__(error_msg)
 
 
 def iterate_services(service_dict: dict):
@@ -62,12 +67,22 @@ def check_service_source(service_name: str, service_data: dict):
     has_build = "build" in service_data
     if not has_image and not has_build:
         print(f"{error_text('ERROR:')} No image or build entry found in {service_name}")
-    # elif has_image:
-    # verify_image(registry, foo, image)
+    elif has_image:
+        check_image(service_name, service_data)
+    elif has_build:
+        check_build(service_name, service_data)
+    #
     # FIXME: define this with type hints
 
 
-def verify_image(registry: str, foo: str, image: str):
+def check_image(service_name: str, service_data: dict):
+    check_registry(image_entry)
+
+
+# FIXME: params seem wrong
+
+
+def check_build(service_name: str, service_data: dict):
     print()
 
 
@@ -111,7 +126,6 @@ def check_writeable(service_name: str, service_data: dict):
             )
 
 
-# TODO: public ip detection, printing and error_text
 def check_ports(service_name: str, service_data: dict):
     # check for publicly exposed ports
     ports = service_data.get("ports", [])
@@ -145,6 +159,7 @@ def run_checks(service_dict: dict):
     for service_name, service_data in iterate_services(service_dict):
         print(f"{info_text('Scanning Service:')} {highlight_text(f'{service_name}')}")
         check_service_source(service_name, service_data)
+        # check_image(service_name, service_data)
         check_privilege(service_name, service_data)
         check_restart_policy(service_name, service_data)
         check_writeable(service_name, service_data)
@@ -154,6 +169,7 @@ def run_checks(service_dict: dict):
 def run():
     check_services_entry(compose_dict)
     run_checks(service_dict)
+    print(service_dict)
 
 
 if __name__ == "__main__":
@@ -168,7 +184,7 @@ if __name__ == "__main__":
 
 # Using .get() returns None when the restart key is missing instead of raising an error.
 #
-# TODO: check for publicly exposded ports, check for dependencies
+# TODO: check for publicly exposed ports, check for dependencies
 #
 # TODO: learn what is going on with build: entries and handle them in the image check
 #
@@ -183,7 +199,7 @@ if __name__ == "__main__":
 #
 # TODO: Handle missing, unreadable, empty, malformed, and non-mapping YAML files with concise errors instead of tracebacks.
 #
-# TODO: Declare termcolor and ruamel.yaml as package dependencies and support color-free output for redirected or editor-driven runs.
+# TODO: Support color-free output for redirected or editor-driven runs.
 #
 # TODO: Collect structured findings with a rule ID, severity, service, message, file, and source location before rendering human-readable output.
 #
