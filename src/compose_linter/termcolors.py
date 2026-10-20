@@ -13,5 +13,5 @@ def highlight_text(string: str) -> str:
     return colored(string, "magenta")
 
 
-def info_text(string: str) -> str:
+def info_text(string: str | None) -> str:
     return colored(string, "blue")
