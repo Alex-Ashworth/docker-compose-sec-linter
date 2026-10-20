@@ -1,8 +1,6 @@
-from termcolors import error_text
+from compose_linter.termcolors import error_text
 
 
-# handle if there is no colon TODO:
-# define default_registry
 def parse_reference(image_entry: str):
     image, separator, digest = image_entry.partition("@")
     if separator:
@@ -13,23 +11,54 @@ def parse_reference(image_entry: str):
 
 def parse_image(image_entry: str):
     image, digest = parse_reference(image_entry)
-    if digest is None:
-        tag_section = image.split(":")
-        if len(tag_section) > 1:
-            image, tag = tag_section
-        elif len(tag_section) == 1:
-            image_section = image.split("/")
-            if len(image_section) == 1:
-                image = image_section
-                registry = "docker.io"
-                repo = "library"
-                tag = "latest"
-            elif len(image_section) == 2:
-                repo, image = image_section
-                # need to handle the multiple /
-            elif len(image_section) == 3:
-                print()
-    # TODO: add logic to split on / if the registry is pulled, [registry/][project/]image[:tag|@digest]
+    tag = None
+    registry = "docker.io"
+    repo = None
+
+    if not image or len(image_entry.split()) != 1 or image_entry != image_entry.strip():
+        print(f"{error_text('ERROR:')} Could not parse image: {image_entry}")
+        return None, None, None, None, None
+
+    if digest is not None:
+        algorithm, separator, value = digest.partition(":")
+        if not algorithm or not separator or not value or "@" in digest or ":" in value:
+            print(f"{error_text('ERROR:')} Could not parse image: {image_entry}")
+            return None, None, None, None, None
+
+    image_sections = image.split("/")
+    image = image_sections[-1]
+    if ":" in image:
+        image, tag = image.rsplit(":", 1)
+        if not tag or ":" in image:
+            print(f"{error_text('ERROR:')} Could not parse image: {image_entry}")
+            return None, None, None, None, None
+    image_sections[-1] = image
+
+    for section in image_sections:
+        if not section:
+            print(f"{error_text('ERROR:')} Could not parse image: {image_entry}")
+            return None, None, None, None, None
+
+    if len(image_sections) > 1:
+        first_section = image_sections[0]
+        if "." in first_section or ":" in first_section or first_section == "localhost":
+            registry = first_section
+            image_sections = image_sections[1:]
+
+    for section in image_sections[:-1]:
+        if ":" in section:
+            print(f"{error_text('ERROR:')} Could not parse image: {image_entry}")
+            return None, None, None, None, None
+
+    if len(image_sections) > 1:
+        repo = "/".join(image_sections[:-1])
+    elif registry == "docker.io":
+        repo = "library"
+
+    if tag is None and digest is None:
+        tag = "latest"
+
+    return registry, repo, image, tag, digest
 
 
 def parse_port(port_section: str):
