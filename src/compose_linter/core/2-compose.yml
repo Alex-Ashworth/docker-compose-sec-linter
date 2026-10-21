@@ -1,0 +1,6 @@
+services:
+  registry:
+    image: docker.io/library/registry:2
+
+  postgres:
+    image: postgres:16-alpine
