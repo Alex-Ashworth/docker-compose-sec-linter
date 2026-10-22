@@ -19,12 +19,12 @@ from compose_linter.termcolors import (
 )
 from compose_linter.utils import open_yaml
 
-compose_path = Path(__file__).with_name("compose.yml")
+compose_path = Path(__file__).with_name("1-compose.yml")
 compose_dict = open_yaml(compose_path)
 service_dict = compose_dict.get("services", {})
 
 
-def check_services_entry():
+def check_services_entry(service_dict: dict):
     # check if services are defined
     if not service_dict:
         raise InvalidComposeError(compose_path)
@@ -76,6 +76,7 @@ def check_service_source(service_name: str, service_data: dict):
 
 
 def check_image(service_name: str, service_data: dict):
+    image_entry = service_data["image"]
     check_registry(image_entry)
 
 
@@ -167,9 +168,8 @@ def run_checks(service_dict: dict):
 
 
 def run():
-    check_services_entry(compose_dict)
+    check_services_entry(service_dict)
     run_checks(service_dict)
-    print(service_dict)
 
 
 if __name__ == "__main__":
@@ -181,53 +181,3 @@ if __name__ == "__main__":
 # volume_entry = str
 # source, target, mode = str
 # options = list
-
-# Using .get() returns None when the restart key is missing instead of raising an error.
-#
-# TODO: check for publicly exposed ports, check for dependencies
-#
-# TODO: learn what is going on with build: entries and handle them in the image check
-#
-# TODO: figure out how to integrate with CLI -> docker-compose-sec-linter /path/to/compose.yml
-#           argparse will likely be better for learning, Click library is the alt
-#
-# Decided not to handle long syntax
-#
-# TODO: Move Compose loading out of module scope so run() receives a file path and parsed document instead of always scanning the bundled fixture.
-#
-# TODO: Add an argparse CLI that accepts a file or directory, discovers compose.yml, compose.yaml, docker-compose.yml, and docker-compose.yaml, and returns documented exit codes.
-#
-# TODO: Handle missing, unreadable, empty, malformed, and non-mapping YAML files with concise errors instead of tracebacks.
-#
-# TODO: Support color-free output for redirected or editor-driven runs.
-#
-# TODO: Collect structured findings with a rule ID, severity, service, message, file, and source location before rendering human-readable output.
-#
-# TODO: Add a root-user rule that distinguishes explicit root values such as user: root or user: 0 from an omitted user whose image default is unknown.
-#
-# TODO: Fix the privileged-mode rule so it reports only privileged: true and supports valid Compose value types.
-#
-# TODO: Add a host-network rule for services using network_mode: host.
-#
-# TODO: Finish public-port detection for short syntax, treating omitted host IPs and wildcard addresses as public while allowing loopback bindings.
-#
-# TODO: Strengthen restart-policy checks for missing policies and explicitly disabled values without assuming every parsed value is a string.
-#
-# TODO: Detect likely hardcoded secrets in mapping and list forms of environment, ignore variable references, and never include secret values in findings.
-#
-# TODO: Add a healthcheck rule for missing checks and explicitly disabled healthchecks.
-#
-# TODO: Extend writable-mount checks to distinguish bind mounts from named volumes and support both short and long Compose syntax.
-#
-# TODO: Flag image references that use latest or omit a tag or digest while correctly handling registry host ports.
-#
-# TODO: Warn when a service joins more networks than a configurable threshold, with a documented default.
-#
-# TODO: Add focused fixtures and tests for every rule, valid Compose syntax variants, malformed input, CLI exit codes, and false-positive cases.
-#
-# TODO: Add stable JSON output so editor integrations can consume findings without parsing colored terminal text.
-#
-# TODO: Build a VS Code extension that runs the CLI and displays findings as diagnostics on the relevant Compose lines.
-#
-# TODO: Build a Neovim integration that maps the same JSON findings into native diagnostics.
-#
